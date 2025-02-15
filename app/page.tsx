@@ -1,7 +1,7 @@
 "use client"
 import React, { useState } from "react";
-import { Upload, Heart, AlertTriangle, MessageCircle, Sparkles, Clock, MessageSquare, Users } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Upload, AlertTriangle, MessageCircle, Sparkles, Clock, MessageSquare, Users } from "lucide-react";
+import { Card, CardContent} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
