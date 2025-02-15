@@ -1,101 +1,210 @@
-import Image from "next/image";
+"use client"
+import React, { useState } from "react";
+import { Upload, Heart, AlertTriangle, MessageCircle, Sparkles, Clock, MessageSquare, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function Home() {
+interface AnalysisResult {
+  roast: string;
+  averageResponseTime: string;
+  topWords: string[];
+  relationshipPhrase: string;
+}
+
+const WhatsAppRoster: React.FC = () => {
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.type === "text/plain") {
+      setFile(droppedFile);
+    } else {
+      alert("Please upload a valid .txt file.");
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile && selectedFile.type === "text/plain") {
+      setFile(selectedFile);
+    } else {
+      alert("Please upload a valid .txt file.");
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/analyse-chat", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      setAnalysis(data.analysis);
+    } catch (error) {
+      console.error("Error analyzing chat:", error);
+      alert("An error occurred while analyzing the chat.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen relative bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-20" />
+      
+      {/* Glowing orbs */}
+      <div className="absolute top-20 left-20 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-20 animate-pulse" />
+      <div className="absolute bottom-20 right-20 w-32 h-32 bg-pink-500 rounded-full blur-3xl opacity-20 animate-pulse" />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Main content */}
+      <div className="relative z-10 container mx-auto min-h-screen py-12 px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400 mb-4 flex items-center justify-center gap-3">
+            <Sparkles className="w-8 h-8 text-purple-400 animate-pulse" />
+            Chat Reality Check
+            <Sparkles className="w-8 h-8 text-pink-400 animate-pulse" />
+          </h1>
+          <p className="text-gray-400 text-lg">Uncover the hidden meanings in your messages 🔮</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="max-w-2xl mx-auto space-y-8">
+          <Card className="bg-gray-800/50 border-0 backdrop-blur-lg shadow-2xl">
+            <CardContent className="p-6">
+              <div
+                className={`border-2 rounded-xl p-8 text-center transition-all backdrop-blur-sm
+                  ${isDragging ? "border-purple-500 bg-purple-900/30" : "border-gray-700 bg-gray-800/30"}
+                  ${file ? "border-green-500 bg-green-900/30" : ""}
+                  hover:border-purple-400 hover:bg-purple-900/20
+                `}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Upload className="w-16 h-16 mx-auto mb-4 text-purple-400 animate-bounce" />
+                <div className="text-gray-300">
+                  {file ? (
+                    <p className="text-green-400 font-medium flex items-center justify-center gap-2">
+                      <MessageCircle className="animate-spin" />
+                      {file.name}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-medium text-lg mb-2">Drop your chat file here! 📂</p>
+                      <p className="text-gray-400 mb-4">or</p>
+                      <input
+                        type="file"
+                        accept=".txt"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="fileInput"
+                      />
+                      <label htmlFor="fileInput">
+                        <Button className="bg-purple-600 hover:bg-purple-700 text-white font-medium transition-all hover:scale-105">
+                          Choose File 📁
+                        </Button>
+                      </label>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <Alert className="mt-6 bg-gray-800/50 border border-purple-500/30">
+                <AlertTriangle className="w-6 h-6 text-purple-400" />
+                <AlertDescription className="text-gray-300">
+                  Get ready for 😱 revelations, 😂 surprises, and 🤔 insights!
+                </AlertDescription>
+              </Alert>
+
+              <Button
+                className="w-full mt-6 h-14 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white
+                  hover:from-purple-700 hover:to-pink-700 transition-all hover:scale-102 disabled:opacity-50"
+                disabled={!file || loading}
+                onClick={handleUpload}
+              >
+                {loading ? "🔄 Analyzing..." : "🔮 Reveal The Truth 🔮"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {analysis && (
+            <div className="space-y-6">
+              {/* Roast Analysis */}
+              <Card className="bg-gray-800/50 border-0 backdrop-blur-lg shadow-2xl">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                    <MessageSquare className="w-6 h-6" />
+                    The Roast 🔥
+                  </h3>
+                  <p className="text-gray-300">{analysis.roast}</p>
+                </CardContent>
+              </Card>
+
+              {/* Response Time */}
+              <Card className="bg-gray-800/50 border-0 backdrop-blur-lg shadow-2xl">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                    <Clock className="w-6 h-6" />
+                    Response Time ⏱️
+                  </h3>
+                  <p className="text-gray-300">Average response time: {analysis.averageResponseTime}</p>
+                </CardContent>
+              </Card>
+
+              {/* Top Words */}
+              <Card className="bg-gray-800/50 border-0 backdrop-blur-lg shadow-2xl">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-purple-400 mb-4">Top 5 Words 📊</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.topWords.map((word, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-purple-500/20 rounded-full text-purple-300"
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Relationship Analysis */}
+              <Card className="bg-gray-800/50 border-0 backdrop-blur-lg shadow-2xl">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                    <Users className="w-6 h-6" />
+                    Relationship Status 💝
+                  </h3>
+                  <p className="text-gray-300">{analysis.relationshipPhrase}</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default WhatsAppRoster;
