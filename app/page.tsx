@@ -114,7 +114,7 @@ const WhatsAppRoster: React.FC = () => {
         <div className={`text-center mb-8 transition-all duration-500 ${isRevealed ? 'scale-110' : ''}`}>
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400 mb-4 flex items-center justify-center gap-3">
             <Sparkles className={`w-8 h-8 text-purple-400 animate-pulse'}`} />
-            Chat Reality Check
+            TextPosed  🔍
             <Sparkles className={`w-8 h-8 text-pink-400 animate-pulse'}`} />
           </h1>
           <p className="text-gray-400 text-lg">Uncover the hidden meanings in your messages 🔮</p>
