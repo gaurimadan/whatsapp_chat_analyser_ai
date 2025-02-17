@@ -11,7 +11,6 @@ interface ChatMessage {
 
 export async function POST(req: NextRequest) {
   try {
-    // Parse form data
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
@@ -19,15 +18,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // Convert file to text
     const fileBuffer = await file.arrayBuffer();
     const fileContent = new TextDecoder("utf-8").decode(fileBuffer);
     const lines = fileContent.split("\n");
 
-    // Define regex pattern for chat format
     const pattern = /(\d{1,2}\/\d{1,2}\/\d{2,4}, \d{1,2}:\d{2}\s?[APM]*) - ([^:]+): (.*)/;
 
-    // Parse chat data
+   
     let data = lines
       .map(line => {
         const match = line.match(pattern);
@@ -44,21 +41,18 @@ export async function POST(req: NextRequest) {
       .filter((item): item is ChatMessage => item !== null)
       .filter(item => !isNaN(item.timestamp.getTime()));
 
-    // Filter out system messages
+  
     data = data.filter(
       item =>
         !item.message.toLowerCase().includes("end-to-end encrypted") &&
         !item.message.toLowerCase().includes("waiting for this message")
     );
 
-    // Get last 10,000 messages
     const recentMessages = data.slice(-10100);
 
-    // Calculate average response time
     const responseTimesMs = calculateResponseTimes(recentMessages);
     const avgResponseTime = formatResponseTime(responseTimesMs);
 
-    // Get top 5 words
     const topWords = getTopWords(recentMessages);
 
     // Combine messages into chat history
@@ -68,13 +62,12 @@ export async function POST(req: NextRequest) {
     const roastPrompt = `Analyze this WhatsApp chat and provide a fun, sarcastic roast based on the overall sentiment and tone. Use humor and relevant emojis.\n\nChat Data:\n${chatHistory}`;
     const relationshipPrompt = `Based on the communication style in this chat, create a playful phrase (maximum 5 words) that describes the relationship between the participants.\n\nChat Data:\n${chatHistory}`;
 
-    // Call Gemini model for roast
+   
     const roastModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const roastResult = await roastModel.generateContent(roastPrompt);
     const roastResponse = await roastResult.response;
     const roast = roastResponse.text();
 
-    // Call Gemini model for relationship phrase
     const relationshipModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const relationshipResult = await relationshipModel.generateContent(relationshipPrompt);
     const relationshipResponse = await relationshipResult.response;
@@ -101,10 +94,9 @@ function calculateResponseTimes(messages: ChatMessage[]): number[] {
     const currentMsg = messages[i];
     const prevMsg = messages[i - 1];
 
-    // Only calculate if messages are from different senders
     if (currentMsg.sender !== prevMsg.sender) {
       const timeDiff = currentMsg.timestamp.getTime() - prevMsg.timestamp.getTime();
-      // Filter out response times longer than 12 hours to avoid skewing the average
+      // // Filter out response times longer than 12 hours to avoid skewing the average
       if (timeDiff < 12 * 60 * 60 * 1000) {
         responseTimes.push(timeDiff);
       }
@@ -134,7 +126,7 @@ function getTopWords(messages: ChatMessage[]): string[] {
     "the", "and", "to", "a", "in", "that", "is", "was", "for", "on", "ok", "okay",
     "with", "at", "by", "an", "be", "this", "which", "or", "from", "as",
     "your", "my", "you", "i", "me", "we", "our", "it", "its", "am", "are", "nahi",
-    "but", "hai", "kya", "dont", "bhi", "toh","not","good","tha","what","have","why","this","null"
+    "but", "hai", "kya", "dont", "bhi", "toh","not","good","tha","what","have","why","this","null","omitted","deleted","message",
   ]);
 
   messages.forEach(msg => {
