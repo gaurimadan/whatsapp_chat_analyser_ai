@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         !item.message.toLowerCase().includes("waiting for this message")
     );
 
-    const recentMessages = data.slice(-10100);
+    const recentMessages = data.slice(-5000);
 
     const responseTimesMs = calculateResponseTimes(recentMessages);
     const avgResponseTime = formatResponseTime(responseTimesMs);
