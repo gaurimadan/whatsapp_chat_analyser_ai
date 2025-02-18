@@ -1,9 +1,10 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState,useRef } from "react";
 import { Upload, AlertTriangle, MessageCircle, Sparkles, Clock, MessageSquare, Users } from "lucide-react";
 import { Card, CardContent} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+
 
 interface AnalysisResult {
   roast: string;
@@ -38,6 +39,12 @@ const WhatsAppRoster: React.FC = () => {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isRevealed, setIsRevealed] = useState<boolean>(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
 
 
   const isValidFileType = (file: File) => {
@@ -155,17 +162,19 @@ const WhatsAppRoster: React.FC = () => {
                       <p className="font-medium text-lg mb-2">Drop your chat file here! 📂</p>
                       <p className="text-gray-400 mb-4">or</p>
                       <input
+                        ref={fileInputRef}
                         type="file"
-                        accept=".txt"
+                        accept=".txt,.zip"
                         onChange={handleFileChange}
                         className="hidden"
                         id="fileInput"
                       />
-                      <label htmlFor="fileInput">
-                        <Button className="bg-purple-600 hover:bg-purple-700 text-white font-medium transition-all hover:scale-105">
-                          Choose File 📁
-                        </Button>
-                      </label>
+                      <Button
+                        onClick={handleButtonClick}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-medium transition-all hover:scale-105"
+                      >
+                        Choose File 📁
+                      </Button>
                     </>
                   )}
                 </div>
