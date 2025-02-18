@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
 async function processChat(fileContent: string) {
   const lines = fileContent.split("\n");
-  const pattern = /(\d{1,2}\/\d{1,2}\/\d{2,4}, \d{1,2}:\d{2}\s?[APM]*) - ([^:]+): (.*)/;
+  const pattern = /(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}) ?(AM|PM|am|pm)? - ([^:]+):? ?(.*)?/;
 
   let data = lines
     .map(line => {
