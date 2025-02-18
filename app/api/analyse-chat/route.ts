@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import JSZip from 'jszip';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
@@ -18,73 +19,108 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    const fileBuffer = await file.arrayBuffer();
-    const fileContent = new TextDecoder("utf-8").decode(fileBuffer);
-    const lines = fileContent.split("\n");
+    // Check file extension instead of type
+    const fileName = file.name.toLowerCase();
+    
+    // Handle ZIP file
+    if (fileName.endsWith('.zip')) {
+      try {
+        const zipBuffer = await file.arrayBuffer();
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(zipBuffer);
+        
+        // Find the first .txt file in the ZIP
+        const txtFile = Object.values(contents.files).find(file => 
+          !file.dir && file.name.toLowerCase().endsWith('.txt')
+        );
 
-    const pattern = /(\d{1,2}\/\d{1,2}\/\d{2,4}, \d{1,2}:\d{2}\s?[APM]*) - ([^:]+): (.*)/;
-
-   
-    let data = lines
-      .map(line => {
-        const match = line.match(pattern);
-        if (match) {
-          const [_, dateTime, sender, message] = match;
-          return {
-            timestamp: new Date(dateTime),
-            sender: sender.trim(),
-            message: message.trim(),
-          };
+        if (!txtFile) {
+          return NextResponse.json({ error: "No text file found in ZIP" }, { status: 400 });
         }
-        return null;
-      })
-      .filter((item): item is ChatMessage => item !== null)
-      .filter(item => !isNaN(item.timestamp.getTime()));
 
-  
-    data = data.filter(
-      item =>
-        !item.message.toLowerCase().includes("end-to-end encrypted") &&
-        !item.message.toLowerCase().includes("waiting for this message")
-    );
-
-    const recentMessages = data.slice(-5000);
-
-    const responseTimesMs = calculateResponseTimes(recentMessages);
-    const avgResponseTime = formatResponseTime(responseTimesMs);
-
-    const topWords = getTopWords(recentMessages);
-
-    // Combine messages into chat history
-    const chatHistory = recentMessages.map(item => `${item.sender}: ${item.message}`).join("\n");
-
-    // Prompts
-    const roastPrompt = `Analyze this WhatsApp chat and provide a fun, sarcastic roast based on the overall sentiment and tone. Use humor and relevant emojis.\n\nChat Data:\n${chatHistory}`;
-    const relationshipPrompt = `Based on the communication style in this chat, create a playful phrase (maximum 5 words) that describes the relationship between the participants.\n\nChat Data:\n${chatHistory}`;
-
-   
-    const roastModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const roastResult = await roastModel.generateContent(roastPrompt);
-    const roastResponse = await roastResult.response;
-    const roast = roastResponse.text();
-
-    const relationshipModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const relationshipResult = await relationshipModel.generateContent(relationshipPrompt);
-    const relationshipResponse = await relationshipResult.response;
-    const relationshipPhrase = relationshipResponse.text();
-
-    return NextResponse.json({
-      analysis: {
-        roast,
-        averageResponseTime: avgResponseTime,
-        topWords,
-        relationshipPhrase,
-      },
-    });
+        const fileContent = await txtFile.async("text");
+        return await processChat(fileContent);
+      } catch (zipError) {
+        console.error("Error processing ZIP file:", zipError);
+        return NextResponse.json({ error: "Invalid ZIP file format" }, { status: 400 });
+      }
+    } 
+    // Handle direct text file upload
+    else if (fileName.endsWith('.txt')) {
+      const fileBuffer = await file.arrayBuffer();
+      const fileContent = new TextDecoder("utf-8").decode(fileBuffer);
+      return await processChat(fileContent);
+    }
+    else {
+      return NextResponse.json({ 
+        error: "Invalid file type. Please upload a ZIP file containing a text file or a direct text file",
+        uploadedFileType: file.type,
+        uploadedFileName: file.name
+      }, { status: 400 });
+    }
   } catch (error) {
     console.error("Error analyzing chat:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Internal Server Error",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 });
   }
+}
+
+async function processChat(fileContent: string) {
+  const lines = fileContent.split("\n");
+  const pattern = /(\d{1,2}\/\d{1,2}\/\d{2,4}, \d{1,2}:\d{2}\s?[APM]*) - ([^:]+): (.*)/;
+
+  let data = lines
+    .map(line => {
+      const match = line.match(pattern);
+      if (match) {
+        const [_, dateTime, sender, message] = match;
+        return {
+          timestamp: new Date(dateTime),
+          sender: sender.trim(),
+          message: message.trim(),
+        };
+      }
+      return null;
+    })
+    .filter((item): item is ChatMessage => item !== null)
+    .filter(item => !isNaN(item.timestamp.getTime()));
+
+  data = data.filter(
+    item =>
+      !item.message.toLowerCase().includes("end-to-end encrypted") &&
+      !item.message.toLowerCase().includes("waiting for this message")
+  );
+
+  const recentMessages = data.slice(-5000);
+  const responseTimesMs = calculateResponseTimes(recentMessages);
+  const avgResponseTime = formatResponseTime(responseTimesMs);
+  const topWords = getTopWords(recentMessages);
+
+  const chatHistory = recentMessages.map(item => `${item.sender}: ${item.message}`).join("\n");
+
+  const roastPrompt = `Analyze this WhatsApp chat and provide a fun, sarcastic roast based on the overall sentiment and tone. Use humor and relevant emojis.\n\nChat Data:\n${chatHistory}`;
+  const relationshipPrompt = `Based on the communication style in this chat, create a playful phrase (maximum 5 words) that describes the relationship between the participants.\n\nChat Data:\n${chatHistory}`;
+
+  const roastModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const roastResult = await roastModel.generateContent(roastPrompt);
+  const roastResponse = await roastResult.response;
+  const roast = roastResponse.text();
+
+  const relationshipModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const relationshipResult = await relationshipModel.generateContent(relationshipPrompt);
+  const relationshipResponse = await relationshipResult.response;
+  const relationshipPhrase = relationshipResponse.text();
+
+  return NextResponse.json({
+    analysis: {
+      roast,
+      averageResponseTime: avgResponseTime,
+      topWords,
+      relationshipPhrase,
+    },
+  });
 }
 
 function calculateResponseTimes(messages: ChatMessage[]): number[] {
@@ -96,7 +132,6 @@ function calculateResponseTimes(messages: ChatMessage[]): number[] {
 
     if (currentMsg.sender !== prevMsg.sender) {
       const timeDiff = currentMsg.timestamp.getTime() - prevMsg.timestamp.getTime();
-      // // Filter out response times longer than 12 hours to avoid skewing the average
       if (timeDiff < 12 * 60 * 60 * 1000) {
         responseTimes.push(timeDiff);
       }
@@ -126,7 +161,7 @@ function getTopWords(messages: ChatMessage[]): string[] {
     "the", "and", "to", "a", "in", "that", "is", "was", "for", "on", "ok", "okay",
     "with", "at", "by", "an", "be", "this", "which", "or", "from", "as",
     "your", "my", "you", "i", "me", "we", "our", "it", "its", "am", "are", "nahi",
-    "but", "hai", "kya", "dont", "bhi", "toh","not","good","tha","what","have","why","this","null","omitted","deleted","message",
+    "but", "hai", "kya", "dont", "bhi", "toh","not","good","tha","what","have","why","this","null","omitted","deleted","message","media",
   ]);
 
   messages.forEach(msg => {

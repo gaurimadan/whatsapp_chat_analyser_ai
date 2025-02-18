@@ -39,6 +39,12 @@ const WhatsAppRoster: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isRevealed, setIsRevealed] = useState<boolean>(false);
 
+
+  const isValidFileType = (file: File) => {
+    const validTypes = ['text/plain', 'application/zip', 'application/x-zip-compressed'];
+    return validTypes.includes(file.type) || file.name.endsWith('.zip') || file.name.endsWith('.txt');
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
@@ -53,7 +59,7 @@ const WhatsAppRoster: React.FC = () => {
     e.preventDefault();
     setIsDragging(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "text/plain") {
+    if (droppedFile && isValidFileType(droppedFile)) {
       setFile(droppedFile);
     } else {
       alert("Please upload a valid .txt file.");
@@ -62,7 +68,7 @@ const WhatsAppRoster: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === "text/plain") {
+    if (selectedFile && isValidFileType(selectedFile)) {
       setFile(selectedFile);
     } else {
       alert("Please upload a valid .txt file.");
