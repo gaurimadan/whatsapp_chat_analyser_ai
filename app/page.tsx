@@ -69,7 +69,7 @@ const WhatsAppRoster: React.FC = () => {
     if (droppedFile && isValidFileType(droppedFile)) {
       setFile(droppedFile);
     } else {
-      alert("Please upload a valid .txt file.");
+      alert("Please upload a valid .zip file.");
     }
   };
 
@@ -78,7 +78,7 @@ const WhatsAppRoster: React.FC = () => {
     if (selectedFile && isValidFileType(selectedFile)) {
       setFile(selectedFile);
     } else {
-      alert("Please upload a valid .txt file.");
+      alert("Please upload a valid .zip file.");
     }
   };
 
