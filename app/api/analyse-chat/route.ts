@@ -19,17 +19,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // Check file extension instead of type
     const fileName = file.name.toLowerCase();
     
-    // Handle ZIP file
     if (fileName.endsWith('.zip')) {
       try {
         const zipBuffer = await file.arrayBuffer();
         const zip = new JSZip();
         const contents = await zip.loadAsync(zipBuffer);
         
-        // Find the first .txt file in the ZIP
         const txtFile = Object.values(contents.files).find(file => 
           !file.dir && file.name.toLowerCase().endsWith('.txt')
         );
@@ -45,7 +42,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid ZIP file format" }, { status: 400 });
       }
     } 
-    // Handle direct text file upload
     else if (fileName.endsWith('.txt')) {
       const fileBuffer = await file.arrayBuffer();
       const fileContent = new TextDecoder("utf-8").decode(fileBuffer);
@@ -69,19 +65,31 @@ export async function POST(req: NextRequest) {
 
 async function processChat(fileContent: string) {
   const lines = fileContent.split("\n");
-  const pattern = /(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}) ?(AM|PM|am|pm)? - ([^:]+):? ?(.*)?/;
+  const pattern1 = /(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}) ?(AM|PM|am|pm)? - ([^:]+):? ?(.*)?/;;
+  const pattern2 = /\[(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}:\d{2})\s?(AM|PM|am|pm)?\] ([^:]+): ?(.*)?/;
 
   let data = lines
     .map(line => {
-      const match = line.match(pattern);
-      if (match) {
-        const [_, dateTime, sender, message] = match;
+      const match1 = line.match(pattern1);
+      if (match1) {
+        const [_, date, time, ampm, sender, message] = match1;
+        return {
+          timestamp: new Date(`${date} ${time}${ampm ? ' ' + ampm : ''}`),
+          sender: sender.trim(),
+          message: message ? message.trim() : '',
+        };
+      }
+
+      const match2 = line.match(pattern2);
+      if (match2) {
+        const [_, dateTime, sender, message] = match2;
         return {
           timestamp: new Date(dateTime),
           sender: sender.trim(),
           message: message.trim(),
         };
       }
+
       return null;
     })
     .filter((item): item is ChatMessage => item !== null)
