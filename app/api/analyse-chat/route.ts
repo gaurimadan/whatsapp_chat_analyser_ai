@@ -108,8 +108,10 @@ async function processChat(fileContent: string) {
 
   const chatHistory = recentMessages.map(item => `${item.sender}: ${item.message}`).join("\n");
 
-  const roastPrompt = `Analyze this WhatsApp chat and provide a fun, sarcastic roast based on the overall sentiment and tone. Use humor and relevant emojis.\n\nChat Data:\n${chatHistory}`;
-  const relationshipPrompt = `Based on the communication style in this chat, create a playful phrase (maximum 5 words) that describes the relationship between the participants.\n\nChat Data:\n${chatHistory}`;
+  const roastPrompt = `Analyze the following WhatsApp chat and deliver a brutally honest reality-check-style roast. Highlight communication patterns, overused phrases, and any underlying behaviors that stand out. Be witty, sarcastic, and brutally real—no sugarcoating. Call out the lack of originality, unnecessary drama, or any cringeworthy habits while keeping it sharp and engaging. Format the response properly in a well-structured paragraph with clear, natural flow. Use relevant emojis for added emphasis.\n\nChat Data:\n${chatHistory}`;
+
+
+  const relationshipPrompt = `Based on the communication style in this chat, create a phrase (maximum 5 words) that describes the relationship between the participants.\n\nChat Data:\n${chatHistory}`;
 
   const roastModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const roastResult = await roastModel.generateContent(roastPrompt);
