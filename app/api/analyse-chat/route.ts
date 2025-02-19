@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
 async function processChat(fileContent: string) {
   const lines = fileContent.split("\n");
   const pattern1 = /(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}) ?(AM|PM|am|pm)? - ([^:]+):? ?(.*)?/;;
-  const pattern2 = /\[(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}:\d{2}(?: ?[APap][Mm])?)\] ([^:]+):? ?(.*)/;;
+  const pattern2 = /^\[?(\d{1,2}\/\d{1,2}\/\d{2,4}),? ?(\d{1,2}:\d{2}:\d{2}(?: ?[APap][Mm])?)?\]? ?([^:]+): (.*)/;
+
+
 
   let data = lines
     .map(line => {
@@ -102,6 +104,7 @@ async function processChat(fileContent: string) {
   );
 
   const recentMessages = data.slice(-5000);
+   console.log("Recent Messages (Last 5000):", recentMessages);
   const responseTimesMs = calculateResponseTimes(recentMessages);
   const avgResponseTime = formatResponseTime(responseTimesMs);
   const topWords = getTopWords(recentMessages);
