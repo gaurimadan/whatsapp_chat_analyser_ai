@@ -144,10 +144,19 @@ function calculateResponseTimes(messages: ChatMessage[]): number[] {
     const currentMsg = messages[i];
     const prevMsg = messages[i - 1];
 
+    // Ensure timestamps are valid
     if (currentMsg.sender !== prevMsg.sender) {
-      const timeDiff = currentMsg.timestamp.getTime() - prevMsg.timestamp.getTime();
-      if (timeDiff < 12 * 60 * 60 * 1000) {
-        responseTimes.push(timeDiff);
+      const currentTime = currentMsg.timestamp.getTime();
+      const prevTime = prevMsg.timestamp.getTime();
+
+      // Check if timestamps are valid and avoid negative differences
+      if (!isNaN(currentTime) && !isNaN(prevTime) && currentTime > prevTime) {
+        const timeDiff = currentTime - prevTime;
+
+        // Exclude long gaps (> 12 hours)
+        if (timeDiff < 12 * 60 * 60 * 1000) {
+          responseTimes.push(timeDiff);
+        }
       }
     }
   }
