@@ -117,12 +117,12 @@ if (match2) {
 
   const relationshipPrompt = `Based on the communication style in this chat, create a phrase (maximum 5 words) that describes the relationship between the participants.\n\nChat Data:\n${chatHistory}`;
 
-  const roastModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const roastModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const roastResult = await roastModel.generateContent(roastPrompt);
   const roastResponse = await roastResult.response;
   const roast = roastResponse.text();
 
-  const relationshipModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const relationshipModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const relationshipResult = await relationshipModel.generateContent(relationshipPrompt);
   const relationshipResponse = await relationshipResult.response;
   const relationshipPhrase = relationshipResponse.text();
